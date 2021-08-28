@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from sqlalchemy import Table, Column, Integer, ForeignKey
-from sqlalchemy.orm import base, relationship
+from sqlalchemy.orm import backref, base, relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
 
@@ -20,7 +20,7 @@ ma = Marshmallow(app)
 class Debtor(db.Model, Base):
     __tablename__ = 'debtor'
     id = db.Column(db.Integer, primary_key=True)
-    childPayment = relationship('Payment')
+    paymentRelationship = db.relationship('Payment', backref="parent_debtor", lazy='joined')
     firstName = db.Column(db.String(25), unique=False)
     lastName = db.Column(db.String(25), unique=False)
     address1 = db.Column(db.String(25), unique=False)
@@ -111,6 +111,8 @@ class Payment(db.Model, Base):
     parent_id = db.Column(db.Integer, ForeignKey('debtor.id'))
     paymentAmount= db.Column(db.Integer, unique=False)
     dateDue = db.Column(db.String(10), unique=False)
+    # parent_debtor = db.relationship("Debtor", backref='paymentRelationship', lazy='joined')
+    # debtor_id = db.Column(db.Integer, db.f)
 
     def __init__(self, parent_id, paymentAmount, dateDue):
 
@@ -147,9 +149,9 @@ def addPayment(id):
 
 @app.route("/debtor/<id>/allpayments", methods=["GET"])
 def getAllPayments(id):
-    parent_id = id 
-    all_payments = Payment.query.all(parent_id)
-    result = payments_schema.dump(all_payments)
+
+    payments = Payment.query.filter_by(parent_id = id ).all()
+    result = payments_schema.dump(payments)
     return jsonify(result)
 
 #Notes 
