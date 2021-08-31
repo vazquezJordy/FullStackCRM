@@ -187,6 +187,12 @@ def addNote(id):
     note = Note.query.get(newNote.id)
     return note_schema.jsonify(note)
 
+@app.route("/debtor/<id>/allnotes", methods=["GET"])
+def getAllNotes(id):
+    notes = Note.query.filter_by(parent_id = id ).all()
+    results = notes_schema.dump(notes)
+    return jsonify(results)
+
 #Phone 
 
 class Phone(db.Model, Base):
@@ -220,6 +226,12 @@ def addPhoneNote(id):
     phoneNote = Phone.query.get(newPhoneNote.id)
 
     return phoneSchema.jsonify(phoneNote)
+
+@app.route("/debtor/<id>/allphonenotes", methods=["GET"])
+def allPhoneNote(id):
+    phoneNotes = Phone.query.filter_by(parent_id = id).all()
+    results = phonesSchema.dump(phoneNotes)
+    return jsonify(results)
 
 if __name__ == "__main__":
     app.run(debug=True)
