@@ -4,17 +4,40 @@ from flask_marshmallow import Marshmallow
 from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import backref, base, relationship
 from sqlalchemy.ext.declarative import declarative_base
+# JWT
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+
 import os
 
 Base = declarative_base()
-
 app = Flask(__name__)
+
+app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET') # Change this!
+jwt = JWTManager(app)
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
     os.path.join(basedir, 'app.sqlite2')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
+
+# Authentication 
+
+# Create a route to authenticate your users and return JWTs. The
+# create_access_token() function is used to actually generate the JWT.
+@app.route("/login", methods=["POST"])
+def create_token():
+    email = request.json.get("email", None)
+    password = request.json.get("password", None)
+    if email != "test" or password != "test":
+        return jsonify({"msg": "Bad email or password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token)
 
 
 class Debtor(db.Model, Base):
@@ -232,6 +255,8 @@ def allPhoneNote(id):
     phoneNotes = Phone.query.filter_by(parent_id = id).all()
     results = phonesSchema.dump(phoneNotes)
     return jsonify(results)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
