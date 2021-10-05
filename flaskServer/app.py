@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response 
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import backref, base, relationship
 from sqlalchemy.ext.declarative import declarative_base
+
+from flask_cors import CORS, cross_origin
 # JWT
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
@@ -14,6 +16,7 @@ import os
 
 Base = declarative_base()
 app = Flask(__name__)
+CORS(app)
 
 app.config["JWT_SECRET_KEY"] = os.environ.get('JWT_SECRET') # Change this!
 jwt = JWTManager(app)
@@ -30,14 +33,25 @@ ma = Marshmallow(app)
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
 @app.route("/login", methods=["POST"])
+@cross_origin(origin='*',headers=['Content-Type'])
 def create_token():
     email = request.json.get("email", None)
     password = request.json.get("password", None)
     if email != "test" or password != "test":
         return jsonify({"msg": "Bad email or password"}), 401
 
+
     access_token = create_access_token(identity=email)
     return jsonify(access_token=access_token)
+
+
+@app.route("/protected", methods=["GET"])
+@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+@jwt_required()
+def protected():
+    
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
 
 
 class Debtor(db.Model, Base):
